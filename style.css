@@ -1,14 +1,23 @@
-html, body
-{
+html, body {
 	height: 100%;
 	margin: 0;
 	padding: 0px;
 	overflow: hidden;
 }
 
-#canvas
-{
-width: 100%;
-height: 100%;
-background: #ccccee;
+#top {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+}
+
+#settings {
+	min-width: 300px;
+	padding: 20px;
+}
+
+#canvas {
+	width: 100%;
+	height: 100%;
+	background: #ededed;
 }
