@@ -149,3 +149,93 @@ function createCamera(_w, _h)
 		}
 	}
 }
+
+function isCornerCell(coord)
+{
+	return coord.q == 0 || coord.r == 0 || coord.s == 0;
+}
+
+function isCornerNeighbour(coord)
+{
+	return Math.abs(coord.q) == 1 || Math.abs(coord.r) == 1 || Math.abs(coord.s) == 1;
+}
+
+function rotate60( coord, n )
+{
+	if( n < 0 ) {
+		n += 6;
+	}
+	for( var i = 0; i < n; i++ ) {
+		coord = makeCoord( -coord.r, -coord.s );
+	}
+	return coord;
+}
+
+// функция вычисляет массив ячеек партнеров в партнерской программе
+function cellPartners(coord)
+{
+	if( coord.ringN == 0 ) {
+		return [];
+	}
+	if( coord.ringN == 1 ) {
+		return [createCoord(0, 0)];
+	}
+	// угловая ячейка на любом кольце
+	if( isCornerCell(coord) ) {
+		// вращаем на север (0, ringN, -ringN). Потом прибавляем известные смещения, вращаем обратно
+		let rotation = 0;
+		while( !(coord.q == 0 && coord.r > 0) ) {
+			coord = rotate60(coord, 1);
+			rotation += 1;
+		}
+		return [
+			rotate60(makeCoord(coord.q, coord.r-1), -rotation),
+			rotate60(makeCoord(coord.q-1, coord.r+1), -rotation),
+			rotate60(makeCoord(coord.q+1, coord.r-2), -rotation),
+		];
+	}
+
+	// вращаем так, чтобы q == ringN
+	let rotation = 0;
+	const ringN = coord.ringN;
+	while( coord.q != ringN ) {
+		coord = rotate60(coord, 1);
+		rotation += 1;
+	}
+
+	// не угол во втором кольце
+	if( ringN == 2 ) {
+		return [
+			rotate60(makeCoord(1, 0), -rotation),
+			rotate60(makeCoord(1, -1), -rotation),
+			makeCoord(0, 0),
+		];
+	}
+	// кольцо 3+ рядом с углом - ассиметрия. Разное число соседей
+	if( isCornerNeighbour(coord) ) {
+		if( coord.r == -1 ) {
+			return [
+				rotate60(makeCoord(ringN-2, 0), -rotation), // через кольцо
+				rotate60(makeCoord(ringN-1, -1), -rotation),
+				rotate60(makeCoord(ringN-1, 0), -rotation),
+				// нет 4й стрелки
+			];
+		} else {
+			return [
+				rotate60(makeCoord(ringN-2, 2-ringN), -rotation), // через кольцо
+				rotate60(makeCoord(ringN-1, 1-ringN), -rotation),
+				rotate60(makeCoord(ringN-1, 2-ringN), -rotation),
+				rotate60(makeCoord(ringN-1, 3-ringN), -rotation),
+			];
+		}
+	
+	}
+	// else
+	// кольцо 4+. Ячейка не рядом с углом. Всегда есть 4 соседа
+	return [
+		rotate60(makeCoord(coord.q-1, coord.r-1), -rotation),
+		rotate60(makeCoord(coord.q-1, coord.r), -rotation),
+		rotate60(makeCoord(coord.q-1, coord.r+1), -rotation),
+		rotate60(makeCoord(coord.q-1, coord.r+2), -rotation),
+	];
+}
