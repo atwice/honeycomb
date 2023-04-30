@@ -13,11 +13,15 @@ function main()
 	canvas.addEventListener('mousedown', onMouseDown);
 	canvas.addEventListener('mouseup', onMouseUp);
 	canvas.addEventListener('mousemove', onMouseMove);
-	canvas.addEventListener( 'wheel', onMouseWheel)
+	canvas.addEventListener('wheel', onMouseWheel);
 	let isDragging = false;
 
-	let honeycomb = createHoneycomb(ctx, 10, 40);
+	let calculateButton = document.getElementById("calculateButton");
+	calculateButton.addEventListener('click', onCalculateButton);
+
+	let honeycomb = createHoneycomb(ctx, 20, 40);
 	let camera = createCamera(width, height);
+	let allCells = [];
 	draw();
 
 	function draw()
@@ -25,7 +29,10 @@ function main()
 		ctx.clearRect(0,0, width, height);
 		ctx.save();
 		camera.setupContext(ctx);
+
 		honeycomb.drawGuides();
+		allCells.forEach(cell => honeycomb.drawCell(cell));
+
 		ctx.restore();
 
 		requestAnimationFrame( draw );
@@ -55,18 +62,54 @@ function main()
 			camera.adjustZoom( -e.deltaY * 0.0003, null );
 		}
 	}
+
+	function onCalculateButton()
+	{
+		let settings = {};
+		settings.numberOfCells = document.getElementById("numberOfCells").value - 0;
+		settings.depositOfCell = document.getElementById("depositOfCell").value - 0;
+		settings.organizationFee = document.getElementById("organizationFee").value / 100;
+		settings.partnerProgramFee = document.getElementById("partnerProgramFee").value / 100;
+		settings.profitability = document.getElementById("profitability").value / 100;
+		settings.cellZeroTradingProfit = document.getElementById("cellZeroTradingProfit").checked;
+
+		allCells = calculateHoneycomb(settings);
+	}
 }
 
 function createHoneycomb(ctx, N, halfWidth)
 {
 	const width = 2*halfWidth;
 	const halfHeight = sqrt3*halfWidth;
+	const ringBackground = [
+		"#EE7809", // 0
+		"#B8B6C4", // 1
+		"#A09DB0", // 2
+		"#88859D", // 3
+		"#706C89", // 4
+		"#595475", // 5
+		"#413B61", // 6
+		"#29234E", // 7
+		"#1C1641", // 8
+		"#140F30", // 9
+		"#100A31", // 10
+	];
+	const nf = new Intl.NumberFormat("en-US", {
+		style: "currency",
+		currency: "USD",
+		maximumFractionDigits: 2,
+		roundingIncrement: 5,
+	  });
+
+	return {
+		drawGuides : _drawGuides,
+		drawCell: _drawCell,
+	};
 
 	function _drawGuides()
 	{
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = "#777";
-		ctx.font = "20px serif";
 		ctx.setLineDash([7, 7]);
 		ctx.beginPath();
 		for(var q = -N; q <= N; q++) {
@@ -77,7 +120,6 @@ function createHoneycomb(ctx, N, halfWidth)
 				}
 				const x = width*coord.x;
 				const y = width*coord.y;
-				ctx.strokeText(q + "," + r , x, y);
 
 				ctx.moveTo(x+halfWidth, y-halfHeight);
 				ctx.lineTo(x+width, y);
@@ -89,10 +131,32 @@ function createHoneycomb(ctx, N, halfWidth)
 		ctx.stroke();
 	}
 
-	let that = {
-		drawGuides : _drawGuides
-	};
-	return that;
+	function _drawCell(cell)
+	{
+		ctx.lineWidth = 1;
+		ctx.setLineDash([]);
+		ctx.strokeStyle = "#110A3A";
+		ctx.fillStyle = ringBackground[Math.min(10, cell.coord.ringN)];
+		const x = width*cell.coord.x;
+		const y = width*cell.coord.y;
+		
+		ctx.beginPath();
+		ctx.moveTo(x+halfWidth, y-halfHeight);
+		ctx.lineTo(x+width, y);
+		ctx.lineTo(x+halfWidth, y+halfHeight);
+		ctx.lineTo(x-halfWidth, y+halfHeight);
+		ctx.lineTo(x-width, y);
+		ctx.lineTo(x-halfWidth, y-halfHeight);
+		ctx.lineTo(x+halfWidth, y-halfHeight);
+		ctx.fill();
+		ctx.stroke();
+
+		ctx.font = "20px noserif";
+		ctx.fillStyle = "#fff";
+		ctx.textAlign = "center";
+		const cellText = nf.format(cell.profit);
+		ctx.fillText(cellText, x, y);
+	}
 }
 
 function createCoord(_q, _r)
@@ -105,6 +169,7 @@ function createCoord(_q, _r)
 		ringN : Math.max(Math.abs(_q), Math.abs(_r), Math.abs(_s)),
 		x : 3*_q/2,
 		y : sqrt3*_r + sqrt3*_q/2,
+		hash: "" + _q + "" + _r,
 	};
 }
 
@@ -166,7 +231,7 @@ function rotate60( coord, n )
 		n += 6;
 	}
 	for( var i = 0; i < n; i++ ) {
-		coord = makeCoord( -coord.r, -coord.s );
+		coord = createCoord( -coord.r, -coord.s );
 	}
 	return coord;
 }
@@ -189,9 +254,9 @@ function cellPartners(coord)
 			rotation += 1;
 		}
 		return [
-			rotate60(makeCoord(coord.q, coord.r-1), -rotation),
-			rotate60(makeCoord(coord.q-1, coord.r+1), -rotation),
-			rotate60(makeCoord(coord.q+1, coord.r-2), -rotation),
+			rotate60(createCoord(coord.q, coord.r-1), -rotation),
+			rotate60(createCoord(coord.q-1, coord.r-1), -rotation),
+			rotate60(createCoord(coord.q+1, coord.r-2), -rotation),
 		];
 	}
 
@@ -206,26 +271,26 @@ function cellPartners(coord)
 	// не угол во втором кольце
 	if( ringN == 2 ) {
 		return [
-			rotate60(makeCoord(1, 0), -rotation),
-			rotate60(makeCoord(1, -1), -rotation),
-			makeCoord(0, 0),
+			rotate60(createCoord(1, 0), -rotation),
+			rotate60(createCoord(1, -1), -rotation),
+			createCoord(0, 0),
 		];
 	}
 	// кольцо 3+ рядом с углом - ассиметрия. Разное число соседей
 	if( isCornerNeighbour(coord) ) {
 		if( coord.r == -1 ) {
 			return [
-				rotate60(makeCoord(ringN-2, 0), -rotation), // через кольцо
-				rotate60(makeCoord(ringN-1, -1), -rotation),
-				rotate60(makeCoord(ringN-1, 0), -rotation),
+				rotate60(createCoord(ringN-2, 0), -rotation), // через кольцо
+				rotate60(createCoord(ringN-1, -1), -rotation),
+				rotate60(createCoord(ringN-1, 0), -rotation),
 				// нет 4й стрелки
 			];
 		} else {
 			return [
-				rotate60(makeCoord(ringN-2, 2-ringN), -rotation), // через кольцо
-				rotate60(makeCoord(ringN-1, 1-ringN), -rotation),
-				rotate60(makeCoord(ringN-1, 2-ringN), -rotation),
-				rotate60(makeCoord(ringN-1, 3-ringN), -rotation),
+				rotate60(createCoord(ringN-2, 2-ringN), -rotation), // через кольцо
+				rotate60(createCoord(ringN-1, 1-ringN), -rotation),
+				rotate60(createCoord(ringN-1, 2-ringN), -rotation),
+				rotate60(createCoord(ringN-1, 3-ringN), -rotation),
 			];
 		}
 	
@@ -233,9 +298,126 @@ function cellPartners(coord)
 	// else
 	// кольцо 4+. Ячейка не рядом с углом. Всегда есть 4 соседа
 	return [
-		rotate60(makeCoord(coord.q-1, coord.r-1), -rotation),
-		rotate60(makeCoord(coord.q-1, coord.r), -rotation),
-		rotate60(makeCoord(coord.q-1, coord.r+1), -rotation),
-		rotate60(makeCoord(coord.q-1, coord.r+2), -rotation),
+		rotate60(createCoord(coord.q-1, coord.r-1), -rotation),
+		rotate60(createCoord(coord.q-1, coord.r), -rotation),
+		rotate60(createCoord(coord.q-1, coord.r+1), -rotation),
+		rotate60(createCoord(coord.q-1, coord.r+2), -rotation),
 	];
+}
+
+function nextNeighbour(coord)
+{
+	if(coord.r == coord.ringN && coord.s < 0) {
+		return createCoord(coord.q-1, coord.r);
+	}
+	if(coord.q == -coord.ringN && coord.r > 0) {
+		return createCoord(coord.q, coord.r-1);
+	}
+	if(coord.s == coord.ringN && coord.q < 0) {
+		return createCoord(coord.q+1, coord.r-1);
+	}
+	if(coord.r == -coord.ringN && coord.s > 0) {
+		return createCoord(coord.q+1, coord.r);
+	}
+	if(coord.q == coord.ringN && coord.r < 0) {
+		return createCoord(coord.q, coord.r+1);
+	}
+	if(coord.s == -coord.ringN && coord.q > 0) {
+		return createCoord(coord.q-1, coord.r+1);
+	}
+	console.assert(false, "Unknown state");
+}
+
+function calculateHoneycomb(settings)
+{
+	const zeroCoord = createCoord(0,0);
+	const cellZero = createCellDeposit( zeroCoord );
+	const allCells = [cellZero];
+	const rings = [[cellZero]];
+	const coordToCell = new Map();
+	coordToCell.set(zeroCoord.hash, cellZero);
+
+	fillCells();
+	fillPartnerLinks();
+	calculateProfit();
+
+	return allCells;
+
+	function fillCells()
+	{
+		if( settings.numberOfCells < 2 ) {
+			return;
+		}
+		let isReady = false;
+		let ringN = 1;
+		while(!isReady) {
+			let coord = createCoord(0, ringN);
+			let ringCells = [];
+			for( var i = 0; i < 6*ringN; i++ ) {
+				let cell = createCellDeposit(coord);
+				allCells.push(cell);
+				ringCells.push(cell);
+				coordToCell.set(coord.hash, cell);
+				coord = nextNeighbour(coord);
+
+				isReady = (allCells.length == settings.numberOfCells);
+				if(isReady) {
+					break;
+				}
+			}
+			rings.push(ringCells);
+			ringN += 1;
+		}
+	}
+
+	function fillPartnerLinks()
+	{
+		for( var i = 0; i < allCells.length; i++ ) {
+			let cell = allCells[i];
+			const partnerCoords = cellPartners(cell.coord);
+			cell.partners = [];
+			for( var j = 0; j < partnerCoords.length; j++ ) {
+				cell.partners.push( coordToCell.get(partnerCoords[j].hash) );
+			}
+		}
+	}
+
+	function calculateProfit()
+	{
+		// в каждую ячейку добавим торговый доход
+		const tradingProfit = settings.depositOfCell * settings.profitability;
+		allCells.forEach( cell => (cell.profit = tradingProfit) );
+		if( !settings.cellZeroTradingProfit ) {
+			cellZero.profit = 0;
+		}
+
+		// перераспределим доход согласно комиссии
+		for(var i = rings.length - 1; i >= 1; i-- ) {
+			rings[i].forEach( cell => payFees(cell) );
+		}
+	}
+
+	function payFees(cell)
+	{
+		const organizationFee = cell.profit * settings.organizationFee;
+		const partnersFee = cell.profit * settings.partnerProgramFee;
+		
+		// комиссия организации
+		cell.profit -= organizationFee;
+		cellZero.profit += organizationFee;
+		
+		// партнерская программа
+		cell.profit -= partnersFee;
+		const onePartnerShare = partnersFee / cell.partners.length;
+		cell.partners.forEach( partner => partner.profit += onePartnerShare );
+	}
+}
+
+function createCellDeposit(_coord)
+{
+	return {
+		coord: _coord,
+		profit: 0,
+		partners: []
+	};
 }

@@ -14,20 +14,20 @@
 				<h4>Параметры</h4>
 				<div class="mb-1">
 					<label for="numberOfCells" class="form-label">Количество</label>
-					<input type="text" class="form-control" id="numberOfCells"/>
+					<input type="number" min="1" class="form-control" id="numberOfCells" value="7"/>
 					<small id="numberOfCellsHelp" class="form-text">Количество заполненных деньгами сот</small>
 				</div>
 				<div class="mb-1">
-					<label for="sizeOfCell" class="form-label">Размер ячейки</label>
+					<label for="depositOfCell" class="form-label">Размер ячейки</label>
 					<div class="input-group">
 						<span class="input-group-prepend input-group-text">$</span>
-						<input type="text" class="form-control" id="sizeOfCell" value="10000"/>
+						<input type="number" class="form-control" id="depositOfCell" value="10000"/>
 					</div>
 				</div>
 				<div class="mb-1">
 					<label for="organizationFee" class="form-label">Размер комиссии организации</label>
 					<div class="input-group">
-						<input type="text" class="form-control" id="organizationFee" value="10"/>
+						<input type="number" class="form-control" id="organizationFee" value="10"/>
 						<div class="input-group-append">
 							<span class="input-group-text">%</span>
 						</div>
@@ -36,7 +36,7 @@
 				<div class="mb-1">
 					<label for="partnerProgramFee" class="form-label">Размер комиссии партнеров</label>
 					<div class="input-group">
-						<input type="text" class="form-control" id="partnerProgramFee" value="30"/>
+						<input type="number" class="form-control" id="partnerProgramFee" value="30"/>
 						<div class="input-group-append">
 							<span class="input-group-text">%</span>
 						</div>
@@ -45,14 +45,18 @@
 				<div class="mb-1">
 					<label for="profitability" class="form-label">Прибыльность</label>
 					<div class="input-group">
-						<input type="text" class="form-control" id="profitability" value="10"/>
+						<input type="number" class="form-control" id="profitability" value="10"/>
 						<div class="input-group-append">
 							<span class="input-group-text">%</span>
 						</div>
 					</div>
 				</div>
+				<div class="form-check mb-5">
+					<input class="form-check-input" type="checkbox" value="" id="cellZeroTradingProfit" checked>
+					<label class="form-check-label" for="flexCheckChecked">Торговать в центральной ячейке</label>
+				  </div>
 
-				<button type="submit" class="btn btn-primary" id="calculateButton">Посчитать</button>
+				<button type="button" class="btn btn-primary" id="calculateButton">Посчитать</button>
 			</form>
 		</div>
 		<canvas id="canvas" width="800" height="800"></canvas>
