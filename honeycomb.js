@@ -34,8 +34,6 @@ function main()
 		allCells.forEach(cell => honeycomb.drawCell(cell));
 
 		ctx.restore();
-
-		requestAnimationFrame( draw );
 	}
 
 	function onMouseDown(e)
@@ -53,6 +51,7 @@ function main()
 		if( isDragging ) {
 			camera.logicCenter.x += e.movementX;
 			camera.logicCenter.y += e.movementY;
+			requestAnimationFrame( draw );
 		}
 	}
 
@@ -60,6 +59,7 @@ function main()
 	{
 		if( !isDragging ) {
 			camera.adjustZoom( -e.deltaY * 0.0003, null );
+			requestAnimationFrame( draw );
 		}
 	}
 
@@ -74,6 +74,7 @@ function main()
 		settings.cellZeroTradingProfit = document.getElementById("cellZeroTradingProfit").checked;
 
 		allCells = calculateHoneycomb(settings);
+		requestAnimationFrame( draw );
 	}
 }
 
@@ -99,7 +100,11 @@ function createHoneycomb(ctx, N, halfWidth)
 		currency: "USD",
 		maximumFractionDigits: 2,
 		roundingIncrement: 5,
-	  });
+	});
+	const pf = new Intl.NumberFormat("en-US", {
+		style: "percent",
+		maximumFractionDigits: 1
+	});
 
 	return {
 		drawGuides : _drawGuides,
@@ -156,6 +161,9 @@ function createHoneycomb(ctx, N, halfWidth)
 		ctx.textAlign = "center";
 		const cellText = nf.format(cell.profit);
 		ctx.fillText(cellText, x, y);
+		ctx.fillStyle = "#30ff80";
+		const percentText = pf.format(cell.profitPercent);
+		ctx.fillText(percentText, x, y+20);
 	}
 }
 
@@ -339,7 +347,7 @@ function calculateHoneycomb(settings)
 
 	fillCells();
 	fillPartnerLinks();
-	calculateProfit();
+	calculateProfits();
 
 	return allCells;
 
@@ -382,34 +390,36 @@ function calculateHoneycomb(settings)
 		}
 	}
 
-	function calculateProfit()
+	function calculateProfits()
 	{
-		// в каждую ячейку добавим торговый доход
 		const tradingProfit = settings.depositOfCell * settings.profitability;
-		allCells.forEach( cell => (cell.profit = tradingProfit) );
-		if( !settings.cellZeroTradingProfit ) {
-			cellZero.profit = 0;
+
+		for(var i = rings.length - 1; i >= 1; i-- ) {
+			rings[i].forEach( cell => calculateCellProfit(cell, tradingProfit) );
 		}
 
-		// перераспределим доход согласно комиссии
-		for(var i = rings.length - 1; i >= 1; i-- ) {
-			rings[i].forEach( cell => payFees(cell) );
+		if( settings.cellZeroTradingProfit ) {
+			cellZero.profit += tradingProfit;
 		}
+		cellZero.profitPercent = cellZero.profit / settings.depositOfCell;
 	}
 
-	function payFees(cell)
+	function calculateCellProfit(cell, tradingProfit)
 	{
-		const organizationFee = cell.profit * settings.organizationFee;
-		const partnersFee = cell.profit * settings.partnerProgramFee;
-		
 		// комиссия организации
-		cell.profit -= organizationFee;
+		const organizationFee = tradingProfit * settings.organizationFee;
+		tradingProfit -= organizationFee;
 		cellZero.profit += organizationFee;
 		
+		cell.profit += tradingProfit;
+		
 		// партнерская программа
+		const partnersFee = cell.profit * settings.partnerProgramFee;
 		cell.profit -= partnersFee;
 		const onePartnerShare = partnersFee / cell.partners.length;
 		cell.partners.forEach( partner => partner.profit += onePartnerShare );
+
+		cell.profitPercent = cell.profit / settings.depositOfCell;
 	}
 }
 
@@ -418,6 +428,7 @@ function createCellDeposit(_coord)
 	return {
 		coord: _coord,
 		profit: 0,
+		profitPercent: 0,
 		partners: []
 	};
 }
