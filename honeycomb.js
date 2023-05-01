@@ -284,32 +284,34 @@ function cellPartners(coord)
 			createCoord(0, 0),
 		];
 	}
-	// кольцо 3+ рядом с углом - ассиметрия. Разное число соседей
+	// кольцо 3+ рядом с углом - один из соседей на том же кольце.
+	// Зависит от
 	if( isCornerNeighbour(coord) ) {
 		if( coord.r == -1 ) {
 			return [
 				rotate60(createCoord(ringN-2, 0), -rotation), // через кольцо
-				rotate60(createCoord(ringN-1, -1), -rotation),
 				rotate60(createCoord(ringN-1, 0), -rotation),
-				// нет 4й стрелки
+				rotate60(createCoord(ringN-1, -1), -rotation),
+				rotate60(createCoord(ringN-1, -2), -rotation),
 			];
 		} else {
 			return [
 				rotate60(createCoord(ringN-2, 2-ringN), -rotation), // через кольцо
-				rotate60(createCoord(ringN-1, 1-ringN), -rotation),
-				rotate60(createCoord(ringN-1, 2-ringN), -rotation),
-				rotate60(createCoord(ringN-1, 3-ringN), -rotation),
+				rotate60(createCoord(ringN-1, coord.r), -rotation),
+				rotate60(createCoord(ringN-1, coord.r+1), -rotation),
+				rotate60(createCoord(ringN-1, coord.r+2), -rotation),
 			];
 		}
 	
 	}
 	// else
-	// кольцо 4+. Ячейка не рядом с углом. Всегда есть 4 соседа
+	// кольцо 4+. Ячейка не рядом с углом. Всегда есть 4 соседа + через кольцо
 	return [
 		rotate60(createCoord(coord.q-1, coord.r-1), -rotation),
 		rotate60(createCoord(coord.q-1, coord.r), -rotation),
 		rotate60(createCoord(coord.q-1, coord.r+1), -rotation),
 		rotate60(createCoord(coord.q-1, coord.r+2), -rotation),
+		rotate60(createCoord(coord.q-2, coord.r+1), -rotation), // через кольцо
 	];
 }
 
