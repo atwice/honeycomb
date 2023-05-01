@@ -10,11 +10,18 @@ function main()
 	let height = window.innerHeight;
 	canvas.width = width;
 	canvas.height = height;
+	// работа с мышью
+	let isDragging = false;
 	canvas.addEventListener('mousedown', onMouseDown);
 	canvas.addEventListener('mouseup', onMouseUp);
 	canvas.addEventListener('mousemove', onMouseMove);
 	canvas.addEventListener('wheel', onMouseWheel);
-	let isDragging = false;
+	// поддержка тач-скрина
+	let dragStart = {x:0, y:0};
+	canvas.addEventListener('touchstart', handleTouchStart)
+	canvas.addEventListener('touchend',  handleTouchEnd)
+	canvas.addEventListener('touchmove', handleTouchMove, false)
+	let initialPinchDistance = null;
 
 	let calculateButton = document.getElementById("calculateButton");
 	calculateButton.addEventListener('click', onCalculateButton);
@@ -62,6 +69,57 @@ function main()
 			requestAnimationFrame( draw );
 		}
 	}
+
+	function handleTouchStart(e)
+	{
+		dragStart = { x: e.touches[0].clientX - camera.logicCenter.x, y: e.touches[0].clientY - camera.logicCenter.y};
+		isDragging = true;
+	}
+	
+	function handleTouchEnd(e)
+	{
+		isDragging = false;
+	}
+
+	function handleTouchMove(e)
+	{
+		if ( e.touches.length == 1 ) {
+			handleTouchMoveSingle(e)
+		} else if (e.type == "touchmove" && e.touches.length == 2) {
+			isDragging = false
+			handlePinch(e)
+		}
+	}
+	
+	function handleTouchMoveSingle(e)
+	{
+		if( isDragging ) {
+			const movementX = e.touches[0].clientX - dragStart.x;
+			const movementY = e.touches[0].clientY - dragStart.y;
+			camera.logicCenter.x = e.touches[0].clientX- dragStart.x;
+			camera.logicCenter.y = e.touches[0].clientY- dragStart.y;
+			requestAnimationFrame( draw );
+		}
+
+	}
+
+	function handlePinch(e)
+	{
+		e.preventDefault();
+		
+		let touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+		let touch2 = { x: e.touches[1].clientX, y: e.touches[1].clientY }
+		
+		// This is distance squared, but no need for an expensive sqrt as it's only used in ratio
+		let currentDistance = (touch1.x - touch2.x)**2 + (touch1.y - touch2.y)**2
+		
+		if (initialPinchDistance == null) {
+			initialPinchDistance = currentDistance
+		} else {
+			camera.adjustZoom( null, currentDistance/initialPinchDistance )
+		}
+	}
+
 
 	function onCalculateButton()
 	{
