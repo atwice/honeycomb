@@ -116,7 +116,8 @@ function main()
 		if (initialPinchDistance == null) {
 			initialPinchDistance = currentDistance
 		} else {
-			camera.adjustZoom( null, currentDistance/initialPinchDistance )
+			camera.adjustZoom( null, currentDistance/initialPinchDistance );
+			requestAnimationFrame( draw );
 		}
 	}
 
