@@ -131,6 +131,7 @@ function main()
 		settings.partnerProgramFee = document.getElementById("partnerProgramFee").value / 100;
 		settings.profitability = document.getElementById("profitability").value / 100;
 		settings.cellZeroTradingProfit = document.getElementById("cellZeroTradingProfit").checked;
+		settings.organizationFeeFromFullProfit = document.getElementById("organizationFeeFromFullProfit").checked;
 
 		allCells = calculateHoneycomb(settings);
 		requestAnimationFrame( draw );
@@ -467,20 +468,29 @@ function calculateHoneycomb(settings)
 
 	function calculateCellProfit(cell, tradingProfit)
 	{
+		const partnerProfit = cell.profit;
+		cell.profit = 0;
+
 		// комиссия организации
-		const organizationFee = tradingProfit * settings.organizationFee;
-		tradingProfit -= organizationFee;
+		const organizationFeeForTrading = tradingProfit * settings.organizationFee;
+		const organizationFeeForPartner = settings.organizationFeeFromFullProfit ? partnerProfit * settings.organizationFee : 0;
+		const organizationFee = organizationFeeForTrading + organizationFeeForPartner;
 		cellZero.profit += organizationFee;
-		
-		cell.profit += tradingProfit;
-		
+
 		// партнерская программа
-		const partnersFee = cell.profit * settings.partnerProgramFee;
-		cell.profit -= partnersFee;
+		const partnersFeeForTrading = tradingProfit * settings.partnerProgramFee;
+		const partnersFeeForPartner = partnerProfit * settings.partnerProgramFee;
+		const partnersFee = partnersFeeForTrading + partnersFeeForPartner;
+
+		// итоговая прибыль ячейки
+		cell.profit = ( tradingProfit + partnerProfit ) - (organizationFee + partnersFee);
+		cell.profitPercent = cell.profit / settings.depositOfCell;
+
+		// распределяем партнерские выплаты
 		const onePartnerShare = partnersFee / cell.partners.length;
 		cell.partners.forEach( partner => partner.profit += onePartnerShare );
 
-		cell.profitPercent = cell.profit / settings.depositOfCell;
+		
 	}
 }
 

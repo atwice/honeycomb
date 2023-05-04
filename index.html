@@ -17,7 +17,7 @@
 					<input type="number" min="1" class="form-control" id="numberOfCells" value="7"/>
 					<small id="numberOfCellsHelp" class="form-text">Количество заполненных деньгами сот</small>
 				</div>
-				<div class="mb-1">
+				<div class="mb-3">
 					<label for="depositOfCell" class="form-label">Размер ячейки</label>
 					<div class="input-group">
 						<span class="input-group-prepend input-group-text">$</span>
@@ -32,6 +32,10 @@
 							<span class="input-group-text">%</span>
 						</div>
 					</div>
+				</div>
+				<div class="form-check mb-3">
+					<input class="form-check-input" type="checkbox" value="" id="organizationFeeFromFullProfit" checked>
+					<label class="form-check-label" for="flexCheckChecked">Комиссия берется с полной прибыли</label>
 				</div>
 				<div class="mb-1">
 					<label for="partnerProgramFee" class="form-label">Размер комиссии партнеров</label>
@@ -54,7 +58,7 @@
 				<div class="form-check mb-5">
 					<input class="form-check-input" type="checkbox" value="" id="cellZeroTradingProfit" checked>
 					<label class="form-check-label" for="flexCheckChecked">Торговать в центральной ячейке</label>
-				  </div>
+				</div>
 
 				<button type="button" class="btn btn-primary" id="calculateButton">Посчитать</button>
 			</form>
