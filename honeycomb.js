@@ -107,11 +107,10 @@ function main()
 	{
 		e.preventDefault();
 		
-		let touch1 = { x: e.touches[0].clientX, y: e.touches[0].clientY }
-		let touch2 = { x: e.touches[1].clientX, y: e.touches[1].clientY }
+		var touch = e.originalEvent.touches || e.originalEvent.changedTouches;
 		
 		// This is distance squared, but no need for an expensive sqrt as it's only used in ratio
-		let currentDistance = (touch1.x - touch2.x)**2 + (touch1.y - touch2.y)**2
+		let currentDistance = (touch[0].clientX - touch[1].clientX)**2 + (touch[0].clientY - touch[1].clientY)**2;
 		
 		if (initialPinchDistance == null) {
 			initialPinchDistance = currentDistance
@@ -272,10 +271,11 @@ function createCamera(_w, _h)
 
 		adjustZoom : function(zoomAmount, zoomFactor)
 		{
+			zoomFactor = (zoomFactor > 1 ? 1.02 : 0.98 );
 			if( zoomAmount ) {
 				this.zoom += zoomAmount;
 			} else if( zoomFactor ) {
-				this.zoom = zoomFactor * this.zoom;
+				this.zoom *= zoomFactor;
 			}
 			this.zoom = Math.min( this.zoom, MAX_ZOOM );
 			this.zoom = Math.max( this.zoom, MIN_ZOOM );
