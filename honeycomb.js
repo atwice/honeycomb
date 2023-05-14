@@ -27,7 +27,7 @@ function main()
 	calculateButton.addEventListener('click', onCalculateButton);
 
 	let honeycomb = createHoneycomb(ctx, 20, 40);
-	let camera = createCamera(width, height);
+	let camera = createCamera(width, height, canvas);
 	let allCells = [];
 	draw();
 
@@ -39,6 +39,7 @@ function main()
 
 		honeycomb.drawGuides();
 		allCells.forEach(cell => honeycomb.drawCell(cell));
+		honeycomb.drawSelection();
 
 		ctx.restore();
 	}
@@ -58,6 +59,10 @@ function main()
 		if( isDragging ) {
 			camera.logicCenter.x += e.movementX;
 			camera.logicCenter.y += e.movementY;
+			requestAnimationFrame( draw );
+		} else {
+			const canvasRect = canvas.getBoundingClientRect();
+			honeycomb.onHover( camera.screenToLogic( {x: e.clientX - canvasRect.x, y: e.clientY - canvasRect.y } ) );
 			requestAnimationFrame( draw );
 		}
 	}
@@ -94,8 +99,6 @@ function main()
 	function handleTouchMoveSingle(e)
 	{
 		if( isDragging ) {
-			const movementX = e.touches[0].clientX - dragStart.x;
-			const movementY = e.touches[0].clientY - dragStart.y;
 			camera.logicCenter.x = e.touches[0].clientX- dragStart.x;
 			camera.logicCenter.y = e.touches[0].clientY- dragStart.y;
 			requestAnimationFrame( draw );
@@ -164,14 +167,18 @@ function createHoneycomb(ctx, N, halfWidth)
 		style: "percent",
 		maximumFractionDigits: 1
 	});
+	let _selectedCell = createCoord(0, 0);
 
 	return {
 		drawGuides : _drawGuides,
 		drawCell: _drawCell,
+		drawSelection: _drawSelection,
+		onHover: _onHover
 	};
 
 	function _drawGuides()
 	{
+		ctx.save();
 		ctx.lineWidth = 1;
 		ctx.strokeStyle = "#777";
 		ctx.setLineDash([7, 7]);
@@ -193,28 +200,19 @@ function createHoneycomb(ctx, N, halfWidth)
 			}
 		}
 		ctx.stroke();
+		ctx.restore();
 	}
 
 	function _drawCell(cell)
 	{
 		ctx.lineWidth = 1;
-		ctx.setLineDash([]);
 		ctx.strokeStyle = "#110A3A";
 		ctx.fillStyle = ringBackground[Math.min(10, cell.coord.ringN)];
+
 		const x = width*cell.coord.x;
 		const y = width*cell.coord.y;
+		_drawHex(x, y, true);
 		
-		ctx.beginPath();
-		ctx.moveTo(x+halfWidth, y-halfHeight);
-		ctx.lineTo(x+width, y);
-		ctx.lineTo(x+halfWidth, y+halfHeight);
-		ctx.lineTo(x-halfWidth, y+halfHeight);
-		ctx.lineTo(x-width, y);
-		ctx.lineTo(x-halfWidth, y-halfHeight);
-		ctx.lineTo(x+halfWidth, y-halfHeight);
-		ctx.fill();
-		ctx.stroke();
-
 		ctx.font = "20px noserif";
 		ctx.fillStyle = "#fff";
 		ctx.textAlign = "center";
@@ -223,6 +221,44 @@ function createHoneycomb(ctx, N, halfWidth)
 		ctx.fillStyle = "#30ff80";
 		const percentText = pf.format(cell.profitPercent);
 		ctx.fillText(percentText, x, y+20);
+	}
+
+	function _drawSelection()
+	{
+		const x = width*_selectedCell.x;
+		const y = width*_selectedCell.y;
+		ctx.lineWidth = 2;
+		ctx.strokeStyle = "#00EEFF";
+		_drawHex(x, y, false);
+	}
+
+	function _drawHex(x, y, needFill)
+	{
+		ctx.beginPath();
+		ctx.moveTo(x+halfWidth, y-halfHeight);
+		ctx.lineTo(x+width, y);
+		ctx.lineTo(x+halfWidth, y+halfHeight);
+		ctx.lineTo(x-halfWidth, y+halfHeight);
+		ctx.lineTo(x-width, y);
+		ctx.lineTo(x-halfWidth, y-halfHeight);
+		ctx.lineTo(x+halfWidth, y-halfHeight);
+		if( needFill ) {
+			ctx.fill();
+		}
+		ctx.stroke();
+	}
+
+	function _onHover(coord)
+	{
+		_selectedCell = pixelToCell(coord);
+		document.getElementById("selected_cell").textContent = _selectedCell.hash;
+	}
+
+	function pixelToCell(coord)
+	{
+		const q = coord.x / width * 2 / 3;
+		const r = q/2 - coord.y / width / sqrt3;
+		return createCoord( Math.round(q), -Math.round(r) );
 	}
 }
 
@@ -236,30 +272,33 @@ function createCoord(_q, _r)
 		ringN : Math.max(Math.abs(_q), Math.abs(_r), Math.abs(_s)),
 		x : 3*_q/2,
 		y : sqrt3*_r + sqrt3*_q/2,
-		hash: "" + _q + "" + _r,
+		hash: "" + _q + ":" + _r,
+		isEqual: function(cell) { return cell.q == this.q && cell.r == this.r },
 	};
 }
 
-function createCamera(_w, _h)
+function createCamera(_w, _h, _canvas)
 {
 	const MIN_ZOOM = 0.5;
 	const MAX_ZOOM = 2.5;
+	const canvasRect = _canvas.getBoundingClientRect();
 	return {
-		logicCenter : { x: 0, y : 0 },
+		logicCenter: {x: 0, y: 0},
 		zoom : 1,
 		size : { x : _w, y : _h },
 
 		screenToLogic : function( screenCoord ) {
 			return {
-				x : screenCoord.x / this.zoom - this.logicCenter.x,
-				y : screenCoord.y / this.zoom - this.logicCenter.y
+				x : ( screenCoord.x - canvasRect.width / 2 - this.logicCenter.x) / this.zoom ,
+				y : ( screenCoord.y - canvasRect.height / 2 - this.logicCenter.y) / this.zoom 
 			};
 		},
 
 		logicToScreen : function( logicCoord ) {
+			// TODO: требуется отладить
 			return {
-				x : (logicCoord.x - this.logicCenter.x) * this.zoom + this.size.x / 2,
-				y : (logicCoord.y - this.logicCenter.y) * this.zoom + this.size.y / 2
+				x : (logicCoord.x - window.innerWidth / 2) * this.zoom + this.size.x / 2,
+				y : (logicCoord.y - window.innerHeight / 2) * this.zoom + this.size.y / 2
 			}
 		},
 
