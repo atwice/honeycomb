@@ -21,3 +21,28 @@ html, body {
 	height: 100%;
 	background: #110A3A;
 }
+
+#center-cell-modal {
+	position: absolute;
+	left: 25%;
+	top: 11%;
+	height: 78%;
+	width: 50%;
+	filter: drop-shadow(2px 2px 20px rgb(243, 126, 0));
+}
+
+#center-cell-hex {
+	height: 100%;
+	width: 100%;
+	clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+	background-color: white;
+	padding-top: 20px;
+}
+
+#center-cell-heading {
+	margin-left: 240px;
+}
+
+#center-cell-content {
+	margin-left: 96px;
+}
