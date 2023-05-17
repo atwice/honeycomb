@@ -251,7 +251,6 @@ function createHoneycomb(ctx, N, halfWidth)
 	function _onHover(coord)
 	{
 		_selectedCell = pixelToCell(coord);
-		document.getElementById("selected_cell").textContent = _selectedCell.hash;
 	}
 
 	function pixelToCell(coord)
