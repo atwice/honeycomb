@@ -66,17 +66,36 @@
 		<canvas id="canvas" width="800" height="800"></canvas>
 		<div id="center-cell-modal">
 			<div id="center-cell-hex">
+				<div class="container" id="close-button-container">
+					<button type="button" class="btn-close" id="close-cell-modal" aria-label="Close"></button>
+				</div>
 				<div id="center-cell-heading">
 					<h2>Прибыль</h2>
-					<h4>От торговли:</h4>
-					<h4>От партнеров:</h4>
-					<h4>Размер соты:</h4>
+					<h5>От торговли:</h5>
+					<h5>От партнеров:</h5>
+					<h5>Размер соты:</h5>
+					<h5>Прибыльность: 4%</h5>
 				</div>
 				<div id="center-cell-content">
+					<div class="lane_overlay" id="lane_eur_usd">$450</div>
+					<div class="lane_overlay" id="lane_usd_chf">$600</div>
+					<div class="lane_overlay" id="lane_gbp_usd">$500</div>
+					<div class="lane_overlay" id="lane_eur_jpy">$1200</div>
+					<div class="lane_overlay" id="lane_xau_usd">$1000</div>
 					<video width="720" height="480" autoplay muted>
 						<source src="https://drive.google.com/uc?export=preview&id=1rzXpzTJhaROcjj8CDRlKvtgsqkOO-jlf" type="video/mp4">
 					</video>
 				</div>
+			</div>
+		</div>
+		<div id="strategy-modal">
+			<div id="strategy-close-button-container">
+				<button type="button" class="btn-close" id="close-strategy" aria-label="Close"></button>
+			</div>
+			<div class="strategy-modal-content">
+				<video id="strategy-video" width="1280" height="720" autoplay muted>
+					<source id="strategy-video-src" src="https://drive.google.com/uc?export=preview&id=1QxY4PMGZ_TzxzGY8bQLsnzv8Ii47NApa" type="video/mp4">
+				</video>
 			</div>
 		</div>
 	</div>

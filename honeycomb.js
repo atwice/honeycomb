@@ -26,6 +26,34 @@ function main()
 	let calculateButton = document.getElementById("calculateButton");
 	calculateButton.addEventListener('click', onCalculateButton);
 
+	let cellModalDialog = document.getElementById("center-cell-modal");
+	document.getElementById("close-cell-modal").onclick = (ev) => cellModalDialog.style.visibility = "hidden";
+
+	let strategyModal = document.getElementById("strategy-modal");
+	let strategyVideo = document.getElementById("strategy-video");
+	let strategyVideoSrc = document.getElementById("strategy-video-src")
+	document.getElementById("lane_eur_usd").onclick = (ev) => showStrategy("eur_usd");
+	document.getElementById("lane_usd_chf").onclick = (ev) => showStrategy("usd_chf");
+	document.getElementById("lane_gbp_usd").onclick = (ev) => showStrategy("gbp_usd");
+	document.getElementById("close-strategy").onclick = (ev) => {
+		strategyModal.style.visibility = "hidden";
+		cellModalDialog.style.visibility = "visible";
+	}
+
+	const strategyVideoMap = {
+		"eur_usd" : "https://drive.google.com/uc?export=preview&id=1QxY4PMGZ_TzxzGY8bQLsnzv8Ii47NApa",
+		"usd_chf" : "https://drive.google.com/uc?export=preview&id=1InWpxAVe4IHuFLHpAcoVfQzxVZmU0dJV",
+		"gbp_usd" : "https://drive.google.com/uc?export=preview&id=11Ati5yCnxQamlyJWJBWhiY43GG3233rf",
+	}
+
+	function showStrategy(symbol)
+	{
+		strategyVideoSrc.setAttribute("src", strategyVideoMap[symbol]);
+		strategyVideo.load();
+		cellModalDialog.style.visibility = "hidden";
+		strategyModal.style.visibility = "visible";
+	}
+
 	let honeycomb = createHoneycomb(ctx, 20, 40);
 	let camera = createCamera(width, height, canvas);
 	let allCells = [];
@@ -44,19 +72,31 @@ function main()
 		ctx.restore();
 	}
 
+	let wasMoved = false;
 	function onMouseDown(e)
 	{
+
 		isDragging = true;
 	}
 
 	function onMouseUp(e)
 	{
+		if( !wasMoved ) {
+			const selected = honeycomb.getSelectedCell();
+			if( selected.q == 0 && selected.r == 0 ) {
+				cellModalDialog.style.visibility = "visible";
+			}
+		}
 		isDragging = false;
+		wasMoved = false;
 	}
 
 	function onMouseMove(e)
 	{
 		if( isDragging ) {
+			if( e.movementX != 0 && e.movementY != 0 ) {
+				wasMoved = true;
+			}
 			camera.logicCenter.x += e.movementX;
 			camera.logicCenter.y += e.movementY;
 			requestAnimationFrame( draw );
@@ -103,7 +143,6 @@ function main()
 			camera.logicCenter.y = e.touches[0].clientY- dragStart.y;
 			requestAnimationFrame( draw );
 		}
-
 	}
 
 	function handlePinch(e)
@@ -122,7 +161,6 @@ function main()
 			requestAnimationFrame( draw );
 		}
 	}
-
 
 	function onCalculateButton()
 	{
@@ -173,7 +211,8 @@ function createHoneycomb(ctx, N, halfWidth)
 		drawGuides : _drawGuides,
 		drawCell: _drawCell,
 		drawSelection: _drawSelection,
-		onHover: _onHover
+		onHover: _onHover,
+		getSelectedCell: () => _selectedCell
 	};
 
 	function _drawGuides()
