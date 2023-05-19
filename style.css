@@ -65,8 +65,8 @@ html, body {
 .lane_overlay {
 	position: absolute;
 
-	min-width: 750px;
-	height: 52px;
+	min-width: 760px;
+	height: 54px;
 	display: flex;
 	justify-content: flex-end;
 	align-items: flex-end;
@@ -76,19 +76,19 @@ html, body {
 }
 
 #lane_eur_usd {
-	top: 300px;
+	top: 252px;
 }
 #lane_usd_chf {
-	top: 356px;
+	top: 312px;
 }
 #lane_gbp_usd {
-	top: 412px;
+	top: 374px;
 }
 #lane_eur_jpy {
-	top: 468px;
+	top: 438px;
 }
 #lane_xau_usd {
-	top: 526px;
+	top: 500px;
 }
 
 #strategy-close-button-container {
