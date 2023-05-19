@@ -51,6 +51,13 @@ html, body {
 	margin-left: 260px;
 }
 
+.modal-profit-header {
+	font-size:larger;
+}
+.modal-profit-header b{
+	margin-right: 10px;
+}
+
 #center-cell-content {
 	margin-left: 96px;
 }

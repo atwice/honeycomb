@@ -4,6 +4,16 @@ const sqrt3 = Math.sqrt(3);
 
 function main()
 {
+	let settings = {
+		numberOfCells : 1,
+		depositOfCell : 10000,
+		organizationFee : 0.1,
+		partnerProgramFee : 0.3,
+		profitability : 0.1,
+		cellZeroTradingProfit : true,
+		organizationFeeFromFullProfit : true
+	};
+	
 	let canvas = document.getElementById("canvas")
 	let ctx = canvas.getContext('2d')
 	let width = window.innerWidth;
@@ -27,23 +37,59 @@ function main()
 	calculateButton.addEventListener('click', onCalculateButton);
 
 	let cellModalDialog = document.getElementById("center-cell-modal");
-	document.getElementById("close-cell-modal").onclick = (ev) => cellModalDialog.style.visibility = "hidden";
+	document.getElementById("close-cell-modal").onclick = (ev) => cellModalDialog.style.visibility = "hidden";;
 
+	let lanesVideo = document.getElementById("lanes-video-player");
 	let strategyModal = document.getElementById("strategy-modal");
 	let strategyVideo = document.getElementById("strategy-video");
 	let strategyVideoSrc = document.getElementById("strategy-video-src")
-	document.getElementById("lane_eur_usd").onclick = (ev) => showStrategy("eur_usd");
-	document.getElementById("lane_usd_chf").onclick = (ev) => showStrategy("usd_chf");
-	document.getElementById("lane_gbp_usd").onclick = (ev) => showStrategy("gbp_usd");
+	let laneEurUsd = document.getElementById("lane_eur_usd");
+	let laneUsdChf = document.getElementById("lane_usd_chf");
+	let laneGbpUsd = document.getElementById("lane_gbp_usd");
+	let laneEurJpy = document.getElementById("lane_eur_jpy");
+	let laneXauUsd = document.getElementById("lane_xau_usd");
+	let laneEurUsdDyn = createDynamicDeposit(laneEurUsd, 10000, 0.0015, [1000, 13000, 27500]);
+	let laneUsdChfDyn = createDynamicDeposit(laneUsdChf, 10000, 0.002, [5000, 16000, 20000]);
+	let laneGbpUsdDyn = createDynamicDeposit(laneGbpUsd, 10000, 0.001, [3000, 7900, 18000, 26000, 30000]);
+	let laneEurJpyDyn = createDynamicDeposit(laneEurJpy, 10000, 0.003, [6500, 11000, 24000, 27000]);
+	let laneXauUsdDyn = createDynamicDeposit(laneXauUsd, 10000, 0.0025, [10000, 15000, 23000, 28000]);
+
+	let honeycomb = createHoneycomb(ctx, 20, 40);
+	let camera = createCamera(width, height, canvas);
+	let allCells = [];
+	draw();
+
+	laneEurUsd.onclick = (ev) => showStrategy("eur_usd");
+	laneUsdChf.onclick = (ev) => showStrategy("usd_chf");
+	laneGbpUsd.onclick = (ev) => showStrategy("gbp_usd");
+
 	document.getElementById("close-strategy").onclick = (ev) => {
 		strategyModal.style.visibility = "hidden";
-		cellModalDialog.style.visibility = "visible";
+		showCentralCell();
 	}
 
 	const strategyVideoMap = {
 		"eur_usd" : "https://drive.google.com/uc?export=preview&id=1QxY4PMGZ_TzxzGY8bQLsnzv8Ii47NApa",
 		"usd_chf" : "https://drive.google.com/uc?export=preview&id=1InWpxAVe4IHuFLHpAcoVfQzxVZmU0dJV",
 		"gbp_usd" : "https://drive.google.com/uc?export=preview&id=11Ati5yCnxQamlyJWJBWhiY43GG3233rf",
+	}
+
+	function showCentralCell()
+	{
+		document.getElementById("profit-from-trading").textContent = "$" + allCells[0].tradingProfit;
+		document.getElementById("profit-from-partners").textContent = "$" + allCells[0].partnersProfit;
+		document.getElementById("modal-header-cell-size").textContent = "$" + settings.depositOfCell;
+		document.getElementById("modal-header-cell-profit-percent").textContent = allCells[0].profitPercent*100 + "%";
+		cellModalDialog.style.visibility = "visible";
+		const fullDeposit = settings.depositOfCell;
+		lanesVideo.onplay = () => {
+			laneEurUsdDyn.restart( fullDeposit );
+			laneUsdChfDyn.restart( fullDeposit );
+			laneGbpUsdDyn.restart( fullDeposit );
+			laneEurJpyDyn.restart( fullDeposit );
+			laneXauUsdDyn.restart( fullDeposit );
+		};
+		lanesVideo.play();
 	}
 
 	function showStrategy(symbol)
@@ -53,11 +99,6 @@ function main()
 		cellModalDialog.style.visibility = "hidden";
 		strategyModal.style.visibility = "visible";
 	}
-
-	let honeycomb = createHoneycomb(ctx, 20, 40);
-	let camera = createCamera(width, height, canvas);
-	let allCells = [];
-	draw();
 
 	function draw()
 	{
@@ -84,7 +125,7 @@ function main()
 		if( !wasMoved ) {
 			const selected = honeycomb.getSelectedCell();
 			if( selected.q == 0 && selected.r == 0 ) {
-				cellModalDialog.style.visibility = "visible";
+				showCentralCell();
 			}
 		}
 		isDragging = false;
@@ -164,7 +205,6 @@ function main()
 
 	function onCalculateButton()
 	{
-		let settings = {};
 		settings.numberOfCells = document.getElementById("numberOfCells").value - 0;
 		settings.depositOfCell = document.getElementById("depositOfCell").value - 0;
 		settings.organizationFee = document.getElementById("organizationFee").value / 100;
@@ -255,7 +295,7 @@ function createHoneycomb(ctx, N, halfWidth)
 		ctx.font = "20px noserif";
 		ctx.fillStyle = "#fff";
 		ctx.textAlign = "center";
-		const cellText = nf.format(cell.profit);
+		const cellText = nf.format(cell.fullProfit());
 		ctx.fillText(cellText, x, y);
 		ctx.fillStyle = "#30ff80";
 		const percentText = pf.format(cell.profitPercent);
@@ -538,21 +578,20 @@ function calculateHoneycomb(settings)
 		}
 
 		if( settings.cellZeroTradingProfit ) {
-			cellZero.profit += tradingProfit;
+			cellZero.tradingProfit += tradingProfit;
 		}
-		cellZero.profitPercent = cellZero.profit / settings.depositOfCell;
+		cellZero.profitPercent = cellZero.fullProfit() / settings.depositOfCell;
 	}
 
 	function calculateCellProfit(cell, tradingProfit)
 	{
-		const partnerProfit = cell.profit;
-		cell.profit = 0;
-
+		const partnerProfit = cell.partnersProfit;
+	
 		// комиссия организации
 		const organizationFeeForTrading = tradingProfit * settings.organizationFee;
 		const organizationFeeForPartner = settings.organizationFeeFromFullProfit ? partnerProfit * settings.organizationFee : 0;
 		const organizationFee = organizationFeeForTrading + organizationFeeForPartner;
-		cellZero.profit += organizationFee;
+		cellZero.partnersProfit += organizationFee;
 
 		// партнерская программа
 		const partnersFeeForTrading = tradingProfit * settings.partnerProgramFee;
@@ -560,14 +599,13 @@ function calculateHoneycomb(settings)
 		const partnersFee = partnersFeeForTrading + partnersFeeForPartner;
 
 		// итоговая прибыль ячейки
-		cell.profit = ( tradingProfit + partnerProfit ) - (organizationFee + partnersFee);
-		cell.profitPercent = cell.profit / settings.depositOfCell;
+		cell.partnersProfit = partnerProfit - partnersFee;
+		cell.tradingProfit = tradingProfit - organizationFee;
+		cell.profitPercent = cell.fullProfit() / settings.depositOfCell;
 
 		// распределяем партнерские выплаты
 		const onePartnerShare = partnersFee / cell.partners.length;
-		cell.partners.forEach( partner => partner.profit += onePartnerShare );
-
-		
+		cell.partners.forEach( partner => partner.partnersProfit += onePartnerShare );
 	}
 }
 
@@ -575,8 +613,33 @@ function createCellDeposit(_coord)
 {
 	return {
 		coord: _coord,
-		profit: 0,
+		tradingProfit: 0,
+		partnersProfit: 0,
+		fullProfit: function() { return this.tradingProfit + this.partnersProfit; },
 		profitPercent: 0,
 		partners: []
 	};
+}
+
+function createDynamicDeposit(element, deposit, profitability, delays)
+{
+	let index = 0;
+	let currentValue = 0;
+	element.textContent = "$0";
+
+	function nextValue()
+	{
+		currentValue += deposit*profitability;
+		element.textContent = "$" + currentValue;
+		index += 1;
+		if( index == 0 ) {
+			setTimeout( nextValue, delays[index] );
+		} else if( index < delays.length ) {
+			setTimeout( nextValue, delays[index] - delays[index - 1] );
+		}
+	}
+	
+	return {
+		restart: (_deposit) => {deposit = _deposit; setTimeout(nextValue, delays[0]) }
+	}
 }
