@@ -57,6 +57,9 @@ html, body {
 .modal-profit-header b{
 	margin-right: 10px;
 }
+.modal-cell-size {
+	margin-left: 400px;
+}
 
 #center-cell-content {
 	margin-left: 96px;
@@ -65,7 +68,7 @@ html, body {
 .lane_overlay {
 	position: absolute;
 
-	min-width: 760px;
+	min-width: 770px;
 	height: 54px;
 	display: flex;
 	justify-content: flex-end;

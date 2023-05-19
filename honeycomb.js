@@ -1,6 +1,16 @@
 window.addEventListener("load", main, false);
 
 const sqrt3 = Math.sqrt(3);
+const nf = new Intl.NumberFormat("en-US", {
+	style: "currency",
+	currency: "USD",
+	maximumFractionDigits: 2,
+	roundingIncrement: 5,
+});
+const pf = new Intl.NumberFormat("en-US", {
+	style: "percent",
+	maximumFractionDigits: 1
+});
 
 function main()
 {
@@ -76,19 +86,35 @@ function main()
 
 	function showCentralCell()
 	{
-		document.getElementById("profit-from-trading").textContent = "$" + allCells[0].tradingProfit;
-		document.getElementById("profit-from-partners").textContent = "$" + allCells[0].partnersProfit;
-		document.getElementById("modal-header-cell-size").textContent = "$" + settings.depositOfCell;
-		document.getElementById("modal-header-cell-profit-percent").textContent = allCells[0].profitPercent*100 + "%";
-		cellModalDialog.style.visibility = "visible";
-		const fullDeposit = settings.depositOfCell;
-		lanesVideo.onplay = () => {
-			laneEurUsdDyn.restart( fullDeposit );
-			laneUsdChfDyn.restart( fullDeposit );
-			laneGbpUsdDyn.restart( fullDeposit );
-			laneEurJpyDyn.restart( fullDeposit );
-			laneXauUsdDyn.restart( fullDeposit );
+		let localSettings = {
+			numberOfCells : settings.numberOfCells,
+			depositOfCell : settings.depositOfCell,
+			organizationFee : settings.organizationFee,
+			partnerProgramFee : settings.partnerProgramFee,
+			profitability : 0.008,
+			cellZeroTradingProfit : true,
+			organizationFeeFromFullProfit : true
 		};
+		let centralCell = calculateHoneycomb(localSettings)[0];
+
+		document.getElementById("modal-header-cell-size").textContent = "$" + settings.depositOfCell;
+		cellModalDialog.style.visibility = "visible";
+		const depositShare = settings.depositOfCell / 5;
+		lanesVideo.onplay = () => {
+			laneEurUsdDyn.restart( depositShare );
+			laneUsdChfDyn.restart( depositShare );
+			laneGbpUsdDyn.restart( depositShare );
+			laneEurJpyDyn.restart( depositShare );
+			laneXauUsdDyn.restart( depositShare );
+
+			setTimeout(writeProfits, 30000);
+		};
+		function writeProfits()
+		{
+			document.getElementById("profit-from-trading").textContent = "$" + centralCell.tradingProfit;
+			document.getElementById("profit-from-partners").textContent = "$" + centralCell.partnersProfit;
+			document.getElementById("modal-header-cell-profit-percent").textContent = pf.format(centralCell.profitPercent);
+		}
 		lanesVideo.play();
 	}
 
@@ -235,16 +261,6 @@ function createHoneycomb(ctx, N, halfWidth)
 		"#140F30", // 9
 		"#100A31", // 10
 	];
-	const nf = new Intl.NumberFormat("en-US", {
-		style: "currency",
-		currency: "USD",
-		maximumFractionDigits: 2,
-		roundingIncrement: 5,
-	});
-	const pf = new Intl.NumberFormat("en-US", {
-		style: "percent",
-		maximumFractionDigits: 1
-	});
 	let _selectedCell = createCoord(0, 0);
 
 	return {
@@ -624,8 +640,15 @@ function createCellDeposit(_coord)
 function createDynamicDeposit(element, deposit, profitability, delays)
 {
 	let index = 0;
-	let currentValue = 0;
-	element.textContent = "$0";
+	let currentValue = deposit;
+	element.textContent = "$" + currentValue;
+
+	function setDeposit(_deposit)
+	{
+		deposit = _deposit;
+		currentValue = deposit;
+		element.textContent = "$" + currentValue;
+	}
 
 	function nextValue()
 	{
@@ -640,6 +663,6 @@ function createDynamicDeposit(element, deposit, profitability, delays)
 	}
 	
 	return {
-		restart: (_deposit) => {deposit = _deposit; setTimeout(nextValue, delays[0]) }
+		restart: (_deposit) => {setDeposit(_deposit); setTimeout(nextValue, delays[0]) }
 	}
 }
