@@ -110,3 +110,7 @@ html, body {
 	background-color: white;
 	box-shadow: 10px 10px 20px #888888;
 }
+
+.strategy-modal-content video {
+	display: none;
+}

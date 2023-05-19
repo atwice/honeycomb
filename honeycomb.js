@@ -51,8 +51,6 @@ function main()
 
 	let lanesVideo = document.getElementById("lanes-video-player");
 	let strategyModal = document.getElementById("strategy-modal");
-	let strategyVideo = document.getElementById("strategy-video");
-	let strategyVideoSrc = document.getElementById("strategy-video-src")
 	let laneEurUsd = document.getElementById("lane_eur_usd");
 	let laneUsdChf = document.getElementById("lane_usd_chf");
 	let laneGbpUsd = document.getElementById("lane_gbp_usd");
@@ -69,19 +67,17 @@ function main()
 	let allCells = [];
 	draw();
 
-	laneEurUsd.onclick = (ev) => showStrategy("eur_usd");
-	laneUsdChf.onclick = (ev) => showStrategy("usd_chf");
-	laneGbpUsd.onclick = (ev) => showStrategy("gbp_usd");
+	let strategyVideoEurUsd = document.getElementById("strategy-video_eur_usd");
+	let strategyVideoUsdChf = document.getElementById("strategy-video_usd_chf");
+	let strategyVideoGbpUsd = document.getElementById("strategy-video_gbp_usd");
+
+	laneEurUsd.onclick = (ev) => showStrategy(strategyVideoEurUsd);
+	laneUsdChf.onclick = (ev) => showStrategy(strategyVideoUsdChf);
+	laneGbpUsd.onclick = (ev) => showStrategy(strategyVideoGbpUsd);
 
 	document.getElementById("close-strategy").onclick = (ev) => {
 		strategyModal.style.visibility = "hidden";
 		showCentralCell();
-	}
-
-	const strategyVideoMap = {
-		"eur_usd" : "https://drive.google.com/uc?export=preview&id=1QxY4PMGZ_TzxzGY8bQLsnzv8Ii47NApa",
-		"usd_chf" : "https://drive.google.com/uc?export=preview&id=1InWpxAVe4IHuFLHpAcoVfQzxVZmU0dJV",
-		"gbp_usd" : "https://drive.google.com/uc?export=preview&id=11Ati5yCnxQamlyJWJBWhiY43GG3233rf",
 	}
 
 	function showCentralCell()
@@ -118,12 +114,16 @@ function main()
 		lanesVideo.play();
 	}
 
-	function showStrategy(symbol)
+	function showStrategy(videoElement)
 	{
-		strategyVideoSrc.setAttribute("src", strategyVideoMap[symbol]);
-		strategyVideo.load();
+		strategyVideoEurUsd.style.display="none";
+		strategyVideoUsdChf.style.display="none";
+		strategyVideoGbpUsd.style.display="none";
+		videoElement.currentTime = 0;
+		videoElement.style.display="block";
 		cellModalDialog.style.visibility = "hidden";
 		strategyModal.style.visibility = "visible";
+		videoElement.play();
 	}
 
 	function draw()
